@@ -1,2 +1,5 @@
 flask
 openpyxl
+pandas
+openpyxl
+gunicorn
