@@ -9,6 +9,7 @@ from app1 import process_file as process_ventas
 from app4 import process_file as process_deudores
 from app2 import process_file as process_balance
 from app3 import process_file as process_facturacion
+from app5 import process_file as process_inventario
 
 app = Flask(__name__)
 
@@ -26,6 +27,7 @@ PROCESSORS = {
     'deudores': {'module': 'app4', 'function': process_deudores},
     'balance-proyectado': {'module': 'app2', 'function': process_balance},
     'facturacion': {'module': 'app3', 'function': process_facturacion},
+    'inventario': {'module': 'app5', 'function': process_inventario},
 }
 
 @app.route('/')
