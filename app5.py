@@ -103,7 +103,7 @@ def process_file(file_path):
                     
                     # Verificar si hay ID en la columna B
                     if cell_b.value is not None and str(cell_b.value).strip() != '':
-                        id_articulo = clean_value(cell_b.value, 'integer')
+                        id_articulo = clean_value(cell_b.value, 'string')
                     
                     # El nombre del artículo está en la columna H
                     nombre_articulo = clean_value(sheet[f'H{current_row}'].value, 'string')
