@@ -84,9 +84,9 @@ def process_file(file_path):
                             # Verificar si ambos son números (totales)
                             float(cell_z.value)
                             float(cell_ag.value)
-                            # Verificar que no sea parte de un artículo (no debe haber ID en columna B)
-                            cell_b = sheet[f'B{current_row}']
-                            if cell_b.value is None or str(cell_b.value).strip() == '':
+                            # Verificar que no haya nombre de artículo en columna H (para distinguir entre artículo y totales)
+                            cell_h = sheet[f'H{current_row}']
+                            if cell_h.value is None or str(cell_h.value).strip() == '' or str(cell_h.value).strip() == 'Dato no Definido':
                                 total_unidades_proveedor = clean_value(cell_z.value, 'float')
                                 total_proveedor = clean_value(cell_ag.value, 'float')
                                 print(f"Totales encontrados - Unidades: {total_unidades_proveedor}, Total: {total_proveedor}")
@@ -97,7 +97,13 @@ def process_file(file_path):
                             pass
                     
                     # Leer información del artículo
-                    id_articulo = clean_value(sheet[f'B{current_row}'].value, 'integer')
+                    # Revisar varias columnas para encontrar el ID del artículo
+                    id_articulo = "Dato no Definido"
+                    cell_b = sheet[f'B{current_row}']
+                    
+                    # Verificar si hay ID en la columna B
+                    if cell_b.value is not None and str(cell_b.value).strip() != '':
+                        id_articulo = clean_value(cell_b.value, 'integer')
                     
                     # El nombre del artículo está en la columna H
                     nombre_articulo = clean_value(sheet[f'H{current_row}'].value, 'string')
@@ -106,9 +112,16 @@ def process_file(file_path):
                     precio_articulo = clean_value(sheet[f'AB{current_row}'].value, 'float')
                     total_articulo = clean_value(sheet[f'AI{current_row}'].value, 'float')
                     
-                    # Solo agregar si hay información válida del artículo (al menos ID o nombre)
-                    if (id_articulo != "Dato no Definido" or nombre_articulo != "Dato no Definido"):
-                        print(f"Artículo - ID: {id_articulo}, Nombre: {nombre_articulo}")
+                    # Debug: mostrar valores de la fila actual
+                    print(f"Fila {current_row}: B='{cell_b.value}', H='{sheet[f'H{current_row}'].value}', Y='{sheet[f'Y{current_row}'].value}'")
+                    
+                    # Solo agregar si hay información válida del artículo (nombre o algún otro dato)
+                    if (nombre_articulo != "Dato no Definido" or 
+                        cantidad_articulo != "Dato no Definido" or 
+                        precio_articulo != "Dato no Definido" or 
+                        total_articulo != "Dato no Definido"):
+                        
+                        print(f"Artículo encontrado - ID: {id_articulo}, Nombre: {nombre_articulo}")
                         
                         articulo_data = {
                             'ID Proveedor': id_proveedor,
