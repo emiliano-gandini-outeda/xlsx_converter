@@ -44,13 +44,17 @@ def process_file(file_path):
         # Recorrer todas las filas para buscar "Proveedor:"
         max_row = sheet.max_row
         current_row = 1
+        proveedores_encontrados = 0
+        
+        print(f"Iniciando búsqueda en {max_row} filas...")
         
         while current_row <= max_row:
             # Buscar "Proveedor:" en la columna D
             cell_d = sheet[f'D{current_row}']
             
             if cell_d.value and 'Proveedor:' in str(cell_d.value):
-                print(f"Encontrado proveedor en fila {current_row}")
+                proveedores_encontrados += 1
+                print(f"Encontrado proveedor #{proveedores_encontrados} en fila {current_row}")
                 
                 # Leer información del proveedor de la misma fila
                 id_proveedor = clean_value(sheet[f'I{current_row}'].value, 'integer')
@@ -65,26 +69,39 @@ def process_file(file_path):
                 total_unidades_proveedor = "Dato no Definido"
                 total_proveedor = "Dato no Definido"
                 
+                # Lista temporal para almacenar artículos de este proveedor
+                articulos_proveedor = []
+                
                 # Leer artículos hasta encontrar los totales
                 while current_row <= max_row:
                     # Verificar si en la columna Z hay un float (indicador de fin de artículos)
                     cell_z = sheet[f'Z{current_row}']
+                    cell_ag = sheet[f'AG{current_row}']
                     
-                    # Si encontramos un número en Z, son los totales del proveedor
-                    if cell_z.value is not None:
+                    # Si encontramos números en Z y AG, son los totales del proveedor
+                    if cell_z.value is not None and cell_ag.value is not None:
                         try:
-                            # Es un número, por lo tanto son los totales
-                            total_unidades_proveedor = clean_value(cell_z.value, 'float')
-                            total_proveedor = clean_value(sheet[f'AG{current_row}'].value, 'float')
-                            print(f"Totales encontrados - Unidades: {total_unidades_proveedor}, Total: {total_proveedor}")
-                            current_row += 1
-                            break
-                        except:
+                            # Verificar si ambos son números (totales)
+                            float(cell_z.value)
+                            float(cell_ag.value)
+                            # Verificar que no sea parte de un artículo (no debe haber ID en columna B)
+                            cell_b = sheet[f'B{current_row}']
+                            if cell_b.value is None or str(cell_b.value).strip() == '':
+                                total_unidades_proveedor = clean_value(cell_z.value, 'float')
+                                total_proveedor = clean_value(cell_ag.value, 'float')
+                                print(f"Totales encontrados - Unidades: {total_unidades_proveedor}, Total: {total_proveedor}")
+                                current_row += 1
+                                break
+                        except (ValueError, TypeError):
+                            # No son números, continuar leyendo artículos
                             pass
                     
-                    # Si no hay totales, leer información del artículo
+                    # Leer información del artículo
                     id_articulo = clean_value(sheet[f'B{current_row}'].value, 'integer')
-                    nombre_articulo = clean_value(sheet[f'I{current_row}'].value, 'string')
+                    
+                    # El nombre del artículo está en la columna H
+                    nombre_articulo = clean_value(sheet[f'H{current_row}'].value, 'string')
+                    
                     cantidad_articulo = clean_value(sheet[f'Y{current_row}'].value, 'float')
                     precio_articulo = clean_value(sheet[f'AB{current_row}'].value, 'float')
                     total_articulo = clean_value(sheet[f'AI{current_row}'].value, 'float')
@@ -93,7 +110,7 @@ def process_file(file_path):
                     if (id_articulo != "Dato no Definido" or nombre_articulo != "Dato no Definido"):
                         print(f"Artículo - ID: {id_articulo}, Nombre: {nombre_articulo}")
                         
-                        processed_data.append({
+                        articulo_data = {
                             'ID Proveedor': id_proveedor,
                             'Proveedor': nombre_proveedor,
                             'ID Articulo': id_articulo,
@@ -101,23 +118,27 @@ def process_file(file_path):
                             'Cantidad Articulo': cantidad_articulo,
                             'Precio por Articulo': precio_articulo,
                             'Total por Articulo': total_articulo,
-                            'Total de unidades por proveedor': total_unidades_proveedor,
-                            'Total por proveedor': total_proveedor
-                        })
+                            'Total de unidades por proveedor': "Dato no Definido",  # Se actualizará después
+                            'Total por proveedor': "Dato no Definido"  # Se actualizará después
+                        }
+                        articulos_proveedor.append(articulo_data)
                     
                     current_row += 1
                 
-                # Actualizar todos los artículos de este proveedor con los totales
-                for item in processed_data:
-                    if (item['ID Proveedor'] == id_proveedor and 
-                        item['Total de unidades por proveedor'] == "Dato no Definido"):
-                        item['Total de unidades por proveedor'] = total_unidades_proveedor
-                        item['Total por proveedor'] = total_proveedor
+                # Agregar totales a todos los artículos de este proveedor
+                for articulo in articulos_proveedor:
+                    articulo['Total de unidades por proveedor'] = total_unidades_proveedor
+                    articulo['Total por proveedor'] = total_proveedor
+                    processed_data.append(articulo)
             else:
                 current_row += 1
         
         if not processed_data:
             raise ValueError("No se encontraron proveedores con el formato esperado en el archivo")
+        
+        print(f"\nResumen del procesamiento:")
+        print(f"- Proveedores encontrados: {proveedores_encontrados}")
+        print(f"- Total de artículos procesados: {len(processed_data)}")
         
         # Crear DataFrame con los datos procesados
         df = pd.DataFrame(processed_data)
