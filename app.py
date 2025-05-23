@@ -8,10 +8,6 @@ from werkzeug.utils import secure_filename
 from app1 import process_file as process_ventas
 from app4 import process_file as process_deudores
 from app2 import process_file as process_balance
-# Importar procesadores
-from app1 import process_file as process_ventas
-from app4 import process_file as process_deudores
-from app2 import process_file as process_balance
 from app3 import process_file as process_facturacion
 
 app = Flask(__name__)
@@ -29,6 +25,7 @@ PROCESSORS = {
     'ventas': {'module': 'app1', 'function': process_ventas},
     'deudores': {'module': 'app4', 'function': process_deudores},
     'balance-proyectado': {'module': 'app2', 'function': process_balance},
+    'facturacion': {'module': 'app3', 'function': process_facturacion},
 }
 
 @app.route('/')
