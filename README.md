@@ -13,10 +13,6 @@ Características principales:
 - Interfaz web simple y moderna basada en Flask y Bootstrap
 - Compatible con despliegue en Render y entornos similares
 
-Para utilizar el sistema:
-1. Instalar las dependencias indicadas en requirements.txt.
-2. Ejecutar `app.py` y acceder a la interfaz web desde el navegador.
-3. Seleccionar el tipo de documento y cargar el archivo correspondiente.
-4. Descargar el archivo procesado con los datos estructurados.
+Este sistema fue diseñado para un tipo especifico de archivos provenientes del cliente.
 
 Este proyecto ha sido diseñado a medida para facilitar el trabajo administrativo y contable de quienes gestionan información compleja en archivos de Excel.
