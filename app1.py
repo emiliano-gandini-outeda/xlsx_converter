@@ -24,7 +24,7 @@ def process_file(filepath):
                 current_fecha = row_values[1]
                 continue
 
-            if row_values[0] and any(doc_type in row_values[1] for doc_type in ["Nota Cred.", "Vta.Cred."]):
+            if row_values[0] and any(doc_type in row_values[1] for doc_type in ["Nota Cred.", "Vta.Cred.", "Vta.Cont."]):
                 cliente_info = row_values[0].strip()
                 parts = cliente_info.split(" ", 1)
                 if len(parts) == 2:
