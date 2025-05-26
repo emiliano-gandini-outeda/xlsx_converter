@@ -44,7 +44,7 @@ def process_file(filepath):
             print(f"Encontrado tipo de documento '{celda_a}' en línea {i+1}")  # Debug
             
             # Leer información del documento (línea actual)
-            tipo_documento = celda_a  # Ya sabemos que es "Vta.Cred." o "Nota Cred."
+            tipo_documento = celda_a  # Ya sabemos que es "Vta.Cred.", "Vta.Cont." o "Nota Cred."
             serie_documento = safe_get_string(df, i, 9)  # Columna J (índice 9)
             numero_documento = safe_get_integer(df, i, 12)  # Columna M (índice 12)
             fecha_documento = safe_get_date(df, i, 21)  # Columna V (índice 21)
