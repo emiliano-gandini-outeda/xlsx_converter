@@ -151,7 +151,7 @@ def process_file(filepath):
             "Codigo Articulo",
             "Articulo",
             "Cantidad articulo",
-            "Precio unitario",
+            "Precio unitario Listas",
             "Total en pesos",
             "Descuento en %",
             "Descuento en pesos"
