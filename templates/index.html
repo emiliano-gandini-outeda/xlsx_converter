@@ -181,7 +181,7 @@
         </h4>
         <!-- Slogan separado -->
         <p class="text-center text-muted mb-4" style="margin-top: -6px;">
-          Procesamiento de Archivos hecho a medida
+          Procesador de Archivos
         </p>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -208,8 +208,6 @@
           </div>
 
           <div id="fileTypeButtons" role="radiogroup" aria-label="Tipo de archivo">
-            <button type="button" role="radio" aria-checked="false" data-value="ventas">Ventas por Clientes</button>
-            <button type="button" role="radio" aria-checked="false" data-value="deudores">Deudores por Venta</button>
             <button type="button" role="radio" aria-checked="false" data-value="balance-proyectado">Balance Resumido por Cliente | Proyectado</button>
             <button type="button" role="radio" aria-checked="false" data-value="facturacion">Diario de Facturacion por SKU por Periodo por Cliente</button>
             <button type="button" role="radio" aria-checked="false" data-value="inventario">Detalle de Articulos Activos</button>

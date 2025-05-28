@@ -5,6 +5,8 @@ from datetime import datetime
 import re
 from dateutil.relativedelta import relativedelta
 
+# Balance Resumido
+
 def process_file(filepath):
     try:
         ext = os.path.splitext(filepath)[1].lower()
