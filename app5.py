@@ -3,6 +3,8 @@ import openpyxl
 import os
 from datetime import datetime
 
+# Detalles de Articulos Activos - Rediseñado
+
 def get_column_letter(col_num):
     """Convierte número de columna a letra de Excel"""
     letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ', 'AK', 'AL']
@@ -49,100 +51,69 @@ def process_file(file_path):
         print(f"Iniciando búsqueda en {max_row} filas...")
         
         while current_row <= max_row:
-            # Buscar "Proveedor:" en la columna D
-            cell_d = sheet[f'D{current_row}']
+            # Buscar "Proveedor:" en la columna B
+            cell_b = sheet[f'B{current_row}']
             
-            if cell_d.value and 'Proveedor:' in str(cell_d.value):
+            if cell_b.value and 'Proveedor:' in str(cell_b.value):
                 proveedores_encontrados += 1
                 print(f"Encontrado proveedor #{proveedores_encontrados} en fila {current_row}")
                 
                 # Leer información del proveedor de la misma fila
-                id_proveedor = clean_value(sheet[f'I{current_row}'].value, 'integer')
-                nombre_proveedor = clean_value(sheet[f'N{current_row}'].value, 'string')
+                # Columna F: ID del proveedor (Integer)
+                id_proveedor = clean_value(sheet[f'F{current_row}'].value, 'integer')
+                # Columna M: Nombre del proveedor (String)
+                nombre_proveedor = clean_value(sheet[f'M{current_row}'].value, 'string')
                 
                 print(f"ID Proveedor: {id_proveedor}, Nombre: {nombre_proveedor}")
                 
                 # Pasar a la siguiente fila para empezar a leer artículos
                 current_row += 1
                 
-                # Variables para totales del proveedor
-                total_unidades_proveedor = "Dato no Definido"
-                total_proveedor = "Dato no Definido"
-                
-                # Lista temporal para almacenar artículos de este proveedor
-                articulos_proveedor = []
-                
-                # Leer artículos hasta encontrar los totales
+                # Leer artículos hasta encontrar otro proveedor o fin de archivo
                 while current_row <= max_row:
-                    # Verificar si en la columna Z hay un float (indicador de fin de artículos)
-                    cell_z = sheet[f'Z{current_row}']
-                    cell_ag = sheet[f'AG{current_row}']
+                    # Verificar si en la columna B hay otro "Proveedor:" (fin de artículos de este proveedor)
+                    cell_b_next = sheet[f'B{current_row}']
+                    if cell_b_next.value and 'Proveedor:' in str(cell_b_next.value):
+                        # Encontramos otro proveedor, salir del bucle de artículos
+                        break
                     
-                    # Si encontramos números en Z y AG, son los totales del proveedor
-                    if cell_z.value is not None and cell_ag.value is not None:
-                        try:
-                            # Verificar si ambos son números (totales)
-                            float(cell_z.value)
-                            float(cell_ag.value)
-                            # Verificar que no haya nombre de artículo en columna H (para distinguir entre artículo y totales)
-                            cell_h = sheet[f'H{current_row}']
-                            if cell_h.value is None or str(cell_h.value).strip() == '' or str(cell_h.value).strip() == 'Dato no Definido':
-                                total_unidades_proveedor = clean_value(cell_z.value, 'float')
-                                total_proveedor = clean_value(cell_ag.value, 'float')
-                                print(f"Totales encontrados - Unidades: {total_unidades_proveedor}, Total: {total_proveedor}")
-                                current_row += 1
-                                break
-                        except (ValueError, TypeError):
-                            # No son números, continuar leyendo artículos
-                            pass
-                    
-                    # Leer información del artículo
-                    # Revisar varias columnas para encontrar el ID del artículo
-                    id_articulo = "Dato no Definido"
-                    cell_b = sheet[f'B{current_row}']
-                    
-                    # Verificar si hay ID en la columna B
-                    if cell_b.value is not None and str(cell_b.value).strip() != '':
-                        id_articulo = clean_value(cell_b.value, 'string')
-                    
-                    # El nombre del artículo está en la columna H
-                    nombre_articulo = clean_value(sheet[f'H{current_row}'].value, 'string')
-                    
-                    cantidad_articulo = clean_value(sheet[f'Y{current_row}'].value, 'float')
-                    precio_articulo = clean_value(sheet[f'AB{current_row}'].value, 'float')
-                    total_articulo = clean_value(sheet[f'AI{current_row}'].value, 'float')
+                    # Leer información del artículo según las especificaciones:
+                    # Columna B: ID del Articulo (String)
+                    id_articulo = clean_value(sheet[f'B{current_row}'].value, 'string')
+                    # Columna I: Nombre del articulo (string)
+                    nombre_articulo = clean_value(sheet[f'I{current_row}'].value, 'string')
+                    # Columna S: Stock Minimo (float)
+                    stock_minimo = clean_value(sheet[f'S{current_row}'].value, 'float')
+                    # Columna V: Estado del Producto (String)
+                    estado_producto = clean_value(sheet[f'V{current_row}'].value, 'string')
+                    # Columna Z: Importado (string)
+                    importado = clean_value(sheet[f'Z{current_row}'].value, 'string')
+                    # Columna AC: Codigo para proveedor (string)
+                    codigo_proveedor = clean_value(sheet[f'AC{current_row}'].value, 'string')
                     
                     # Debug: mostrar valores de la fila actual
-                    print(f"Fila {current_row}: B='{cell_b.value}', H='{sheet[f'H{current_row}'].value}', Y='{sheet[f'Y{current_row}'].value}'")
+                    print(f"Fila {current_row}: ID='{id_articulo}', Nombre='{nombre_articulo}', Stock='{stock_minimo}'")
                     
-                    # Solo agregar si hay información válida del artículo (nombre o algún otro dato)
-                    if (nombre_articulo != "Dato no Definido" or 
-                        cantidad_articulo != "Dato no Definido" or 
-                        precio_articulo != "Dato no Definido" or 
-                        total_articulo != "Dato no Definido"):
+                    # Solo agregar si hay información válida del artículo
+                    # Verificar que al menos tenga ID o nombre del artículo
+                    if (id_articulo != "Dato no Definido" or 
+                        nombre_articulo != "Dato no Definido"):
                         
-                        print(f"Artículo encontrado - ID: {id_articulo}, Nombre: {nombre_articulo}")
+                        print(f"Artículo válido encontrado - ID: {id_articulo}, Nombre: {nombre_articulo}")
                         
                         articulo_data = {
                             'ID Proveedor': id_proveedor,
-                            'Proveedor': nombre_proveedor,
+                            'Nombre Proveedor': nombre_proveedor,
                             'ID Articulo': id_articulo,
                             'Nombre Articulo': nombre_articulo,
-                            'Cantidad Articulo': cantidad_articulo,
-                            'Precio por Articulo': precio_articulo,
-                            'Total por Articulo': total_articulo,
-                            'Total de unidades por proveedor': "Dato no Definido",  # Se actualizará después
-                            'Total por proveedor': "Dato no Definido"  # Se actualizará después
+                            'Stock Minimo': stock_minimo,
+                            'Estado del Producto': estado_producto,
+                            'Importado': importado,
+                            'Codigo para Proveedor': codigo_proveedor
                         }
-                        articulos_proveedor.append(articulo_data)
+                        processed_data.append(articulo_data)
                     
                     current_row += 1
-                
-                # Agregar totales a todos los artículos de este proveedor
-                for articulo in articulos_proveedor:
-                    articulo['Total de unidades por proveedor'] = total_unidades_proveedor
-                    articulo['Total por proveedor'] = total_proveedor
-                    processed_data.append(articulo)
             else:
                 current_row += 1
         
@@ -155,6 +126,19 @@ def process_file(file_path):
         
         # Crear DataFrame con los datos procesados
         df = pd.DataFrame(processed_data)
+        
+        # Reordenar columnas según especificación
+        column_order = [
+            'ID Proveedor',
+            'Nombre Proveedor', 
+            'ID Articulo',
+            'Nombre Articulo',
+            'Stock Minimo',
+            'Estado del Producto',
+            'Importado',
+            'Codigo para Proveedor'
+        ]
+        df = df[column_order]
         
         # Generar nombre de archivo de salida
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -183,6 +167,10 @@ def process_file(file_path):
         
         print(f"Archivo procesado guardado en: {output_path}")
         print(f"Total de artículos procesados: {len(df)}")
+        
+        # Mostrar preview de los primeros registros
+        print("\nPreview de los primeros 3 registros:")
+        print(df.head(3).to_string())
         
         return output_path
         
