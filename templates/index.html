@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>InsightGrid</title>
+    
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+  <link rel="icon" href="/img/agreement_8769402.png">
+  <style>
+    body {
+      background-color: #1e1e2f;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .card {
+      background-color: #2a2a40;
+      border: none;
+      border-radius: 20px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+      animation: fadeIn 0.6s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .btn-primary {
+      background-color: #6366f1;
+      border-color: #6366f1;
+      border-radius: 999px;
+      padding: 0.6rem 1.8rem;
+      font-weight: 500;
+    }
+    .btn-primary:hover {
+      background-color: #818cf8;
+      border-color: #818cf8;
+    }
+    .form-control {
+      background-color: #1e1e2f;
+      color: #f1f1f1;
+      border: 1px solid #3f3f51;
+      border-radius: 12px;
+    }
+    .form-control:focus {
+      border-color: #818cf8;
+      box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+    }
+    .icon-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 500;
+    }
+    .alert {
+      background-color: #3b3b4f;
+      color: #ffdddd;
+      border: none;
+    }
+    .alert-dismissible .btn-close {
+      filter: invert(1);
+    }
+    #loadingBar {
+      display: none;
+    }
+    .text-muted {
+      color: #a0a0b2 !important;
+    }
+    /* Footer */
+    footer {
+      text-align: center;
+      color: #a0a0b2;
+      font-weight: 500;
+      padding: 1rem 0;
+      margin-top: auto;
+      font-size: 0.9rem;
+      user-select: none;
+    }
+
+    /* Selector de archivo como rectángulo responsive y centrado */
+    label[for="file"] {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      aspect-ratio: 3 / 1;
+      border: 2px dashed #6366f1;
+      border-radius: 16px;
+      cursor: pointer;
+      background-color: #1e1e2f;
+      margin: 0 auto 1rem auto;
+      color: #818cf8;
+      transition: all 0.3s ease;
+      text-align: center;
+      font-size: 1.2rem;
+      user-select: none;
+      padding: 0.5rem 1rem;
+      gap: 0.3rem;
+      max-width: none;
+    }
+    label[for="file"]:hover {
+      filter: invert(1);
+    }
+    label[for="file"].selected {
+      background-color: #4c4c6e;
+      color: #cfd1ff;
+      filter: none;
+      border-color: #818cf8;
+    }
+    label[for="file"].selected:hover {
+      filter: invert(1);
+    }
+    label[for="file"] i {
+      font-size: 2rem;
+      transition: color 0.3s ease;
+    }
+    label[for="file"].selected i {
+      color: #cfd1ff;
+    }
+    label[for="file"]:hover i {
+      color: #e0e0e0;
+    }
+
+    /* Botones selector de tipo archivo en 2 columnas responsive */
+    #fileTypeButtons {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.8rem;
+      max-width: 600px;
+      margin: 0 auto 1.5rem auto;
+    }
+    #fileTypeButtons button {
+      background-color: #1e1e2f;
+      color: #e0e0e0;
+      border: 2px solid #6366f1;
+      border-radius: 12px;
+      padding: 0.6rem 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      user-select: none;
+      white-space: normal;
+      text-align: center;
+      font-size: 0.95rem;
+    }
+    #fileTypeButtons button:hover {
+      filter: invert(1);
+    }
+    #fileTypeButtons button.selected {
+      background-color: #f1f1f1;
+      color: #1e1e2f;
+      border-color: #1e1e2f;
+      filter: none !important;
+    }
+
+    /* Último botón ocupa dos columnas si impar */
+    #fileTypeButtons button.last-odd {
+      grid-column: span 2;
+    }
+
+    /* Responsive */
+    @media (max-width: 520px) {
+      #fileTypeButtons {
+        grid-template-columns: 1fr;
+      }
+      #fileTypeButtons button.last-odd {
+        grid-column: span 1;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-7">
+      <div class="card p-4">
+        <h4 class="text-center text-light mb-1">
+          <i class="bi bi-file-earmark-spreadsheet"></i> InsightGrid
+        </h4>
+        <!-- Slogan separado -->
+        <p class="text-center text-muted mb-4" style="margin-top: -6px;">
+          Procesador de Archivos
+        </p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="mb-3">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                  {{ message }}
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <form id="uploadForm" action="/procesar" method="POST" enctype="multipart/form-data" onsubmit="mostrarCarga();">
+          <div class="mb-4 text-center">
+            <label for="file" id="fileLabel" class="" aria-live="polite">
+              <i id="fileIcon" class="bi bi-file-earmark-arrow-up"></i>
+              <span id="fileLabelText" class="mt-2 text-muted" style="font-size: 0.85rem;">Seleccionar archivo</span>
+              <input class="form-control" type="file" id="file" name="file" accept=".xlsx,.xls,.csv" required style="display: none;">
+            </label>
+            <p class="text-muted mt-2" style="font-size: 0.75rem;">.XLSX, .XLS o .CSV (máx. 10MB)</p>
+          </div>
+
+          <div id="fileTypeButtons" role="radiogroup" aria-label="Tipo de archivo">
+            <button type="button" role="radio" aria-checked="false" data-value="balance-proyectado">Balance Resumido - Cliente - Proyectado</button>
+            <button type="button" role="radio" aria-checked="false" data-value="facturacion">Diario de Facturacion - SKU - Periodo - Cliente</button>
+            <button type="button" role="radio" aria-checked="false" data-value="inventario">Detalle de Articulos Activos</button>
+          </div>
+          <input type="hidden" name="fileType" id="fileType" required>
+
+          <div class="text-center">
+            <button id="submitBtn" type="submit" class="btn btn-primary" disabled>
+              <i class="bi bi-arrow-bar-down"></i> Procesar y Descargar
+            </button>
+          </div>
+
+          <div id="loadingBar" class="mt-4 text-center">
+            <div class="spinner-border text-light" role="status">
+              <span class="visually-hidden">Procesando...</span>
+            </div>
+            <p class="mt-2 text-muted">Procesando archivo, por favor espera...</p>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Developed by EGO
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  const fileInput = document.getElementById('file');
+  const fileLabel = document.getElementById('fileLabel');
+  const fileLabelText = document.getElementById('fileLabelText');
+  const fileIcon = document.getElementById('fileIcon');
+  const submitBtn = document.getElementById('submitBtn');
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length > 0) {
+      const fileName = fileInput.files[0].name;
+      fileLabelText.textContent = fileName;
+      fileLabel.classList.add('selected');
+      fileIcon.className = 'bi bi-file-earmark-check'; // icono documento seleccionado
+      comprobarEstadoFormulario();
+    } else {
+      fileLabelText.textContent = 'Seleccionar archivo';
+      fileLabel.classList.remove('selected');
+      fileIcon.className = 'bi bi-file-earmark-arrow-up';
+      comprobarEstadoFormulario();
+    }
+  });
+
+  // Botones selector tipo archivo
+  const fileTypeButtons = document.querySelectorAll('#fileTypeButtons button');
+  const fileTypeInput = document.getElementById('fileType');
+
+  // Marcar último botón si impar para que ocupe 2 columnas
+  if (fileTypeButtons.length % 2 === 1) {
+    fileTypeButtons[fileTypeButtons.length -1].classList.add('last-odd');
+  }
+
+  fileTypeButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      // Deseleccionar todos
+      fileTypeButtons.forEach(btn => {
+        btn.classList.remove('selected');
+        btn.setAttribute('aria-checked', 'false');
+      });
+      // Seleccionar este
+      button.classList.add('selected');
+      button.setAttribute('aria-checked', 'true');
+      fileTypeInput.value = button.getAttribute('data-value');
+      comprobarEstadoFormulario();
+    });
+  });
+
+  function comprobarEstadoFormulario() {
+    // Activar botón si hay archivo y tipo seleccionado
+    if (fileInput.files.length > 0 && fileTypeInput.value) {
+      submitBtn.disabled = false;
+    } else {
+      submitBtn.disabled = true;
+    }
+  }
+
+  function mostrarCarga() {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Procesando...';
+    document.getElementById('loadingBar').style.display = 'block';
+    window.addEventListener('focus', resetearBoton);
+    setTimeout(() => {
+      resetearBoton();
+    }, 10000);
+    return true;
+  }
+
+  function resetearBoton() {
+    window.removeEventListener('focus', resetearBoton);
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = '<i class="bi bi-arrow-bar-down"></i> Procesar y Descargar';
+    document.getElementById('loadingBar').style.display = 'none';
+  }
+</script>
+</body>
+</html>
