@@ -1,11 +1,19 @@
 import pandas as pd
 import openpyxl
+import xlrd
 import os
 from datetime import datetime
 
+# Detalles de Articulos Activos - Rediseñado
+
 def get_column_letter(col_num):
     """Convierte número de columna a letra de Excel"""
-    letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ', 'AK', 'AL']
+    letters = []
+    for i in range(1, 35):  # Hasta columna AH
+        if i <= 26:
+            letters.append(chr(64 + i))  # A-Z
+        else:
+            letters.append('A' + chr(64 + i - 26))  # AA-AH
     return letters[col_num - 1] if col_num <= len(letters) else f"Col{col_num}"
 
 def clean_value(value, data_type='string'):
@@ -27,6 +35,15 @@ def clean_value(value, data_type='string'):
             return float(value)
         except (ValueError, TypeError):
             return "Dato no Definido"
+    elif data_type == 'importado':
+        # Tipo especial para la columna importado que debe ser "Si" o "No"
+        str_value = str(value).strip().lower()
+        if str_value in ['si', 'sí', 'yes', 'y', '1', 'true', 'verdadero']:
+            return "Si"
+        elif str_value in ['no', 'n', '0', 'false', 'falso']:
+            return "No"
+        else:
+            return "No"  # Valor por defecto
     else:  # string
         return str(value).strip() if str(value).strip() != '' else "Dato no Definido"
 
@@ -34,115 +51,113 @@ def process_file(file_path):
     """Procesa el archivo de inventario y extrae la información de proveedores y artículos"""
     
     try:
-        # Leer el archivo Excel
-        workbook = openpyxl.load_workbook(file_path, data_only=True)
-        sheet = workbook.active
+        # Determinar el tipo de archivo y cargar apropiadamente
+        file_extension = os.path.splitext(file_path)[1].lower()
+        
+        if file_extension == '.xlsx':
+            # Para archivos .xlsx usar openpyxl
+            workbook = openpyxl.load_workbook(file_path, data_only=True)
+            sheet = workbook.active
+            max_row = sheet.max_row
+            is_xlsx = True
+        elif file_extension == '.xls':
+            # Para archivos .xls usar xlrd
+            workbook = xlrd.open_workbook(file_path)
+            sheet = workbook.sheet_by_index(0)
+            max_row = sheet.nrows
+            is_xlsx = False
+        else:
+            raise ValueError("Formato de archivo no soportado. Solo se admiten .xlsx y .xls")
+        
+        print(f"Procesando archivo {file_extension.upper()}: {os.path.basename(file_path)}")
         
         # Lista para almacenar todos los datos procesados
         processed_data = []
         
+        # Función auxiliar para obtener valor de celda según el tipo de archivo
+        def get_cell_value(row, col):
+            if is_xlsx:
+                # Para openpyxl (xlsx) - usar notación de letra
+                col_letter = get_column_letter(col)
+                cell = sheet[f'{col_letter}{row}']
+                return cell.value
+            else:
+                # Para xlrd (xls) - usar índices (row-1, col-1 porque xlrd usa base 0)
+                try:
+                    return sheet.cell_value(row - 1, col - 1)
+                except IndexError:
+                    return None
+        
         # Recorrer todas las filas para buscar "Proveedor:"
-        max_row = sheet.max_row
         current_row = 1
         proveedores_encontrados = 0
         
         print(f"Iniciando búsqueda en {max_row} filas...")
         
         while current_row <= max_row:
-            # Buscar "Proveedor:" en la columna D
-            cell_d = sheet[f'D{current_row}']
+            # Buscar "Proveedor:" en la columna B (columna 2)
+            cell_b_value = get_cell_value(current_row, 2)
             
-            if cell_d.value and 'Proveedor:' in str(cell_d.value):
+            if cell_b_value and 'Proveedor:' in str(cell_b_value):
                 proveedores_encontrados += 1
                 print(f"Encontrado proveedor #{proveedores_encontrados} en fila {current_row}")
                 
                 # Leer información del proveedor de la misma fila
-                id_proveedor = clean_value(sheet[f'I{current_row}'].value, 'integer')
-                nombre_proveedor = clean_value(sheet[f'N{current_row}'].value, 'string')
+                # Columna F (6): ID del proveedor (Integer)
+                id_proveedor = clean_value(get_cell_value(current_row, 6), 'integer')
+                # Columna M (13): Nombre del proveedor (String)
+                nombre_proveedor = clean_value(get_cell_value(current_row, 13), 'string')
                 
                 print(f"ID Proveedor: {id_proveedor}, Nombre: {nombre_proveedor}")
                 
                 # Pasar a la siguiente fila para empezar a leer artículos
                 current_row += 1
                 
-                # Variables para totales del proveedor
-                total_unidades_proveedor = "Dato no Definido"
-                total_proveedor = "Dato no Definido"
-                
-                # Lista temporal para almacenar artículos de este proveedor
-                articulos_proveedor = []
-                
-                # Leer artículos hasta encontrar los totales
+                # Leer artículos hasta encontrar otro proveedor o fin de archivo
                 while current_row <= max_row:
-                    # Verificar si en la columna Z hay un float (indicador de fin de artículos)
-                    cell_z = sheet[f'Z{current_row}']
-                    cell_ag = sheet[f'AG{current_row}']
+                    # Verificar si en la columna B hay otro "Proveedor:" (fin de artículos de este proveedor)
+                    cell_b_next_value = get_cell_value(current_row, 2)
+                    if cell_b_next_value and 'Proveedor:' in str(cell_b_next_value):
+                        # Encontramos otro proveedor, salir del bucle de artículos
+                        break
                     
-                    # Si encontramos números en Z y AG, son los totales del proveedor
-                    if cell_z.value is not None and cell_ag.value is not None:
-                        try:
-                            # Verificar si ambos son números (totales)
-                            float(cell_z.value)
-                            float(cell_ag.value)
-                            # Verificar que no haya nombre de artículo en columna H (para distinguir entre artículo y totales)
-                            cell_h = sheet[f'H{current_row}']
-                            if cell_h.value is None or str(cell_h.value).strip() == '' or str(cell_h.value).strip() == 'Dato no Definido':
-                                total_unidades_proveedor = clean_value(cell_z.value, 'float')
-                                total_proveedor = clean_value(cell_ag.value, 'float')
-                                print(f"Totales encontrados - Unidades: {total_unidades_proveedor}, Total: {total_proveedor}")
-                                current_row += 1
-                                break
-                        except (ValueError, TypeError):
-                            # No son números, continuar leyendo artículos
-                            pass
-                    
-                    # Leer información del artículo
-                    # Revisar varias columnas para encontrar el ID del artículo
-                    id_articulo = "Dato no Definido"
-                    cell_b = sheet[f'B{current_row}']
-                    
-                    # Verificar si hay ID en la columna B
-                    if cell_b.value is not None and str(cell_b.value).strip() != '':
-                        id_articulo = clean_value(cell_b.value, 'string')
-                    
-                    # El nombre del artículo está en la columna H
-                    nombre_articulo = clean_value(sheet[f'H{current_row}'].value, 'string')
-                    
-                    cantidad_articulo = clean_value(sheet[f'Y{current_row}'].value, 'float')
-                    precio_articulo = clean_value(sheet[f'AB{current_row}'].value, 'float')
-                    total_articulo = clean_value(sheet[f'AI{current_row}'].value, 'float')
+                    # Leer información del artículo según las especificaciones:
+                    # Columna B (2): ID del Articulo (String)
+                    id_articulo = clean_value(get_cell_value(current_row, 2), 'string')
+                    # Columna I (9): Nombre del articulo (string)
+                    nombre_articulo = clean_value(get_cell_value(current_row, 9), 'string')
+                    # Columna S (19): Stock Minimo (float)
+                    stock_minimo = clean_value(get_cell_value(current_row, 19), 'float')
+                    # Columna V (22): Estado del Producto (String)
+                    estado_producto = clean_value(get_cell_value(current_row, 22), 'string')
+                    # Columna Z (26): Importado (string "Si" o "No")
+                    importado = clean_value(get_cell_value(current_row, 26), 'importado')
+                    # Columna AC (29): Codigo para proveedor (string)
+                    codigo_proveedor = clean_value(get_cell_value(current_row, 29), 'string')
                     
                     # Debug: mostrar valores de la fila actual
-                    print(f"Fila {current_row}: B='{cell_b.value}', H='{sheet[f'H{current_row}'].value}', Y='{sheet[f'Y{current_row}'].value}'")
+                    print(f"Fila {current_row}: ID='{id_articulo}', Nombre='{nombre_articulo}', Stock='{stock_minimo}'")
                     
-                    # Solo agregar si hay información válida del artículo (nombre o algún otro dato)
-                    if (nombre_articulo != "Dato no Definido" or 
-                        cantidad_articulo != "Dato no Definido" or 
-                        precio_articulo != "Dato no Definido" or 
-                        total_articulo != "Dato no Definido"):
+                    # Solo agregar si hay información válida del artículo
+                    # Verificar que al menos tenga ID o nombre del artículo
+                    if (id_articulo != "Dato no Definido" or 
+                        nombre_articulo != "Dato no Definido"):
                         
-                        print(f"Artículo encontrado - ID: {id_articulo}, Nombre: {nombre_articulo}")
+                        print(f"Artículo válido encontrado - ID: {id_articulo}, Nombre: {nombre_articulo}")
                         
                         articulo_data = {
                             'ID Proveedor': id_proveedor,
-                            'Proveedor': nombre_proveedor,
+                            'Nombre Proveedor': nombre_proveedor,
                             'ID Articulo': id_articulo,
                             'Nombre Articulo': nombre_articulo,
-                            'Cantidad Articulo': cantidad_articulo,
-                            'Precio por Articulo': precio_articulo,
-                            'Total por Articulo': total_articulo,
-                            'Total de unidades por proveedor': "Dato no Definido",  # Se actualizará después
-                            'Total por proveedor': "Dato no Definido"  # Se actualizará después
+                            'Stock Minimo': stock_minimo,
+                            'Estado del Producto': estado_producto,
+                            'Importado': importado,
+                            'Codigo para Proveedor': codigo_proveedor
                         }
-                        articulos_proveedor.append(articulo_data)
+                        processed_data.append(articulo_data)
                     
                     current_row += 1
-                
-                # Agregar totales a todos los artículos de este proveedor
-                for articulo in articulos_proveedor:
-                    articulo['Total de unidades por proveedor'] = total_unidades_proveedor
-                    articulo['Total por proveedor'] = total_proveedor
-                    processed_data.append(articulo)
             else:
                 current_row += 1
         
@@ -156,9 +171,22 @@ def process_file(file_path):
         # Crear DataFrame con los datos procesados
         df = pd.DataFrame(processed_data)
         
+        # Reordenar columnas según especificación
+        column_order = [
+            'ID Proveedor',
+            'Nombre Proveedor', 
+            'ID Articulo',
+            'Nombre Articulo',
+            'Stock Minimo',
+            'Estado del Producto',
+            'Importado',
+            'Codigo para Proveedor'
+        ]
+        df = df[column_order]
+        
         # Generar nombre de archivo de salida
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_filename = f"inventario_procesado_{timestamp}.xlsx"
+        base_filename = os.path.splitext(os.path.basename(file_path))[0]
+        output_filename = f"{base_filename}_PROCESADO.xlsx"
         output_path = os.path.join(os.path.dirname(file_path), output_filename)
         
         # Guardar archivo Excel
@@ -184,6 +212,10 @@ def process_file(file_path):
         print(f"Archivo procesado guardado en: {output_path}")
         print(f"Total de artículos procesados: {len(df)}")
         
+        # Mostrar preview de los primeros registros
+        print("\nPreview de los primeros 3 registros:")
+        print(df.head(3).to_string())
+        
         return output_path
         
     except Exception as e:
@@ -192,9 +224,14 @@ def process_file(file_path):
 
 if __name__ == "__main__":
     # Para pruebas locales
-    test_file = "test_inventario.xlsx"
-    if os.path.exists(test_file):
-        result = process_file(test_file)
-        print(f"Archivo procesado: {result}")
-    else:
-        print("Archivo de prueba no encontrado")
+    test_files = ["test_inventario.xlsx", "test_inventario.xls"]
+    for test_file in test_files:
+        if os.path.exists(test_file):
+            print(f"\nProcesando: {test_file}")
+            try:
+                result = process_file(test_file)
+                print(f"Archivo procesado: {result}")
+            except Exception as e:
+                print(f"Error procesando {test_file}: {e}")
+        else:
+            print(f"Archivo de prueba no encontrado: {test_file}")
