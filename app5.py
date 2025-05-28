@@ -35,6 +35,15 @@ def clean_value(value, data_type='string'):
             return float(value)
         except (ValueError, TypeError):
             return "Dato no Definido"
+    elif data_type == 'importado':
+        # Tipo especial para la columna importado que debe ser "Si" o "No"
+        str_value = str(value).strip().lower()
+        if str_value in ['si', 'sí', 'yes', 'y', '1', 'true', 'verdadero']:
+            return "Si"
+        elif str_value in ['no', 'n', '0', 'false', 'falso']:
+            return "No"
+        else:
+            return "No"  # Valor por defecto
     else:  # string
         return str(value).strip() if str(value).strip() != '' else "Dato no Definido"
 
@@ -121,8 +130,8 @@ def process_file(file_path):
                     stock_minimo = clean_value(get_cell_value(current_row, 19), 'float')
                     # Columna V (22): Estado del Producto (String)
                     estado_producto = clean_value(get_cell_value(current_row, 22), 'string')
-                    # Columna Z (26): Importado (string)
-                    importado = clean_value(get_cell_value(current_row, 26), 'string')
+                    # Columna Z (26): Importado (string "Si" o "No")
+                    importado = clean_value(get_cell_value(current_row, 26), 'importado')
                     # Columna AC (29): Codigo para proveedor (string)
                     codigo_proveedor = clean_value(get_cell_value(current_row, 29), 'string')
                     
@@ -176,8 +185,8 @@ def process_file(file_path):
         df = df[column_order]
         
         # Generar nombre de archivo de salida
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_filename = f"inventario_procesado_{timestamp}.xlsx"
+        base_filename = os.path.splitext(os.path.basename(file_path))[0]
+        output_filename = f"{base_filename}_PROCESADO.xlsx"
         output_path = os.path.join(os.path.dirname(file_path), output_filename)
         
         # Guardar archivo Excel
