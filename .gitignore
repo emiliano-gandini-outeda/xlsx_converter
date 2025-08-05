@@ -6,4 +6,4 @@
 /.venv
 Procfile
 .env
-Procfile
+\__pycache__
