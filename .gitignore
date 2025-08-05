@@ -1,9 +1,8 @@
 
 /downloads
 /uploads
-/__pycache__
+/__pycache__/
 /venv
 /.venv
 Procfile
 .env
-\__pycache__
