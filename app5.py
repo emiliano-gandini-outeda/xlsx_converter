@@ -223,15 +223,4 @@ def process_file(file_path):
         raise Exception(f"Error al procesar el archivo de inventario: {str(e)}")
 
 if __name__ == "__main__":
-    # Para pruebas locales
-    test_files = ["test_inventario.xlsx", "test_inventario.xls"]
-    for test_file in test_files:
-        if os.path.exists(test_file):
-            print(f"\nProcesando: {test_file}")
-            try:
-                result = process_file(test_file)
-                print(f"Archivo procesado: {result}")
-            except Exception as e:
-                print(f"Error procesando {test_file}: {e}")
-        else:
-            print(f"Archivo de prueba no encontrado: {test_file}")
+    print("Este script está diseñado para ser importado desde app.py")

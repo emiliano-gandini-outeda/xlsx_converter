@@ -15,7 +15,7 @@ UPLOAD_FOLDER = 'uploads'
 DOWNLOAD_FOLDER = 'downloads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['DOWNLOAD_FOLDER'] = DOWNLOAD_FOLDER
-app.secret_key = 'supersecretkey'
+app.secret_key = os.getenv("SECRET_KEY")
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
