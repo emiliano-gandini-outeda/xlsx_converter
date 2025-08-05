@@ -3,3 +3,7 @@
 /uploads
 /__pycache__
 /venv
+/.venv
+Procfile
+.env
+Procfile
